@@ -1,39 +1,23 @@
-#include "ToDoList.h"
+#include "TodoList.h"
 
 #include <iostream>
 #include <conio.h>
 
-ToDoList::ToDoList()
+#include "Todo.h"
+
+TodoList::TodoList()
 {
-	todoList = {};
-	doneList = {};
+	todoVec = {};
+	doneVec = {};
+	todoVecTxtName = "ToDoList.txt";
+	doneVecTxtName = "DoneList.txt";
+
 	isRun = false;
 	this->Init();
 }
 
-ToDoList::~ToDoList()
+TodoList::~TodoList()
 {
-	//add to txt
-	writeFile.open("ToDoList.txt");
-	if (writeFile.is_open())
-	{
-		for (std::string i : todoList)
-		{
-			writeFile << i + '\n';
-		}
-	}
-	writeFile.close();
-	
-	writeFile.open("DoneList.txt");
-	if (writeFile.is_open())
-	{
-		for (std::string i : doneList)
-		{
-			writeFile << i + '\n';
-		}
-	}
-	writeFile.close();
-
 	if (readFile.is_open())
 	{
 		readFile.close();
@@ -43,27 +27,31 @@ ToDoList::~ToDoList()
 		writeFile.close();
 	}
 
+	std::cout << "Goodbye!." << std::endl;
 }
 
-void ToDoList::StartUpdate()
+void TodoList::StartUpdate()
 {
 	isRun = true;
 	this->Update();
 }
 
-void ToDoList::Init()
+void TodoList::Init()
 {
 	std::cout << "TO DO List started" << std::endl;
 	
-	this->LoadTxt("ToDoList.txt");
-	this->LoadTxt("DoneList.txt");
+	this->LoadTxt(todoVecTxtName);
+	this->PauseTillAnyInput();
+	this->LoadTxt(doneVecTxtName);
+	this->PauseTillAnyInput();
 
+	std::cout << "Load completed" << std::endl;
 	this->PauseTillAnyInput();
 }
 
-void ToDoList::LoadTxt(std::string name)
+void TodoList::LoadTxt(std::string name)
 {
-	if (name != "ToDoList.txt" && name != "DoneList.txt")
+	if (name != todoVecTxtName && name != doneVecTxtName)
 	{
 		std::cout << "Can not use " << name << " file." << std::endl;
 		return;
@@ -71,7 +59,7 @@ void ToDoList::LoadTxt(std::string name)
 	// File io set
 	readFile.open(name);
 
-	// Failed to find/open .txt
+	// Check if failed to find/open .txt
 	if (!readFile.is_open())
 	{
 		std::cout << "readFile.is_open() is false." << std::endl;
@@ -86,7 +74,6 @@ void ToDoList::LoadTxt(std::string name)
 		std::cout << "New file created!" << std::endl;
 
 		writeFile.close();
-		this->PauseTillAnyInput();
 		return;
 	}
 
@@ -97,35 +84,68 @@ void ToDoList::LoadTxt(std::string name)
 	if (readFile.peek() == std::ifstream::traits_type::eof())
 	{
 		std::cout << name << " is empty." << std::endl;
-		this->PauseTillAnyInput();
 		return;
 	}
 
-	if (name == "ToDoList.txt")
+	// Move from .txt to vector with loop
+	if (name == todoVecTxtName)
 	{
-		// Move list from .txt to vector with loop
 		while (readFile.peek() != std::ifstream::traits_type::eof())
 		{
 			std::string tempStr;
 			getline(readFile, tempStr);
-			todoList.push_back(tempStr);
+			Todo* todoPtr = new Todo(tempStr, 0);
+			todoVec.push_back(todoPtr);
 		}
 	}
-	else if (name == "DoneList.txt")
+	else if (name == doneVecTxtName)
 	{
-		// Move list from .txt to vector with loop
 		while (readFile.peek() != std::ifstream::traits_type::eof())
 		{
 			std::string tempStr;
 			getline(readFile, tempStr);
-			doneList.push_back(tempStr);
+			Todo* todoPtr = new Todo(tempStr, 0);
+			doneVec.push_back(todoPtr);
 		}
 	}
-	std::cout << "ToDoList.txt Load complete!" << std::endl;
+	std::cout << name << " Load complete!" << std::endl;
 	readFile.close();
 }
 
-void ToDoList::Update()
+void TodoList::SaveTxt(std::string name)
+{
+	if (name != todoVecTxtName && name != doneVecTxtName)
+	{
+		std::cout << "Can not use " << name << " file." << std::endl;
+		return;
+	}
+
+	//add to txt
+	writeFile.open(name);
+	if (!writeFile.is_open())
+	{
+		std::cout << "Failed to open " << name << " for wirteFile" << std::endl;
+		return;
+	}
+
+	if (name == todoVecTxtName)
+	{
+		for (Todo* i : todoVec)
+		{
+			writeFile << i->GetTodoStr() + '\n';
+		}
+	}
+	else if (name == doneVecTxtName)
+	{
+		for (Todo* i : doneVec)
+		{
+			writeFile << i->GetTodoStr() + '\n';
+		}
+	}
+	writeFile.close();
+}
+
+void TodoList::Update()
 {
 	while (isRun)
 	{
@@ -134,185 +154,162 @@ void ToDoList::Update()
 	}
 }
 
-void ToDoList::ShowMenu()
+void TodoList::ShowMenu()
 {
 	std::cout << "----------------------------" << std::endl;
 	std::cout << "ToDo List Menu" << std::endl;
 
-	std::cout << "1. Show All ToDo" << std::endl;
-	std::cout << "2. Add ToDo" << std::endl;
-	std::cout << "3. Delete ToDo" << std::endl;
-	std::cout << "4. Check ToDo" << std::endl;
+	std::cout << "1. Show All Todo" << std::endl;
+	std::cout << "2. Add Todo" << std::endl;
+	std::cout << "3. Delete Todo" << std::endl;
+	std::cout << "4. Check Todo" << std::endl;
 	std::cout << "5. Show All Done" << std::endl;
 	std::cout << "6. Quit" << std::endl;
 
 	std::cout << "----------------------------" << std::endl;
 }
 
-void ToDoList::SelectMenu()
+void TodoList::SelectMenu()
 {
 	int input{};
 	std::cin >> input;
 	std::cin.ignore();
-
 	std::cout << "----------------------------" << std::endl;
 
 	switch (input)
 	{
 	case SHOW_ALL_TODO:
-		this->PrintToDo();
+		std::cout << "Show All Todo" << std::endl;
+		this->PrintTodoVec(todoVec);
 		break;
 	case ADD_TODO:
-		this->AddToDo();
+		std::cout << "Add Todo" << std::endl;
+		this->AddTodo();
 		break;
 	case DELETE_TODO:
-		this->DeleteToDo();
+		std::cout << "Delete Todo" << std::endl;
+		this->DeleteTodo();
 		break;
 	case CHECK_TODO: 
-		this->CheckToDo();
+		std::cout << "Check Todo" << std::endl;
+		this->CheckTodo();
 		break;
 	case SHOW_ALL_DONE:
-		this->PrintDone();
+		std::cout << "Show All Done" << std::endl;
+		this->PrintTodoVec(doneVec);
 		break;
 	case QUIT: 
+		std::cout << "Quit" << std::endl;
 		this->Quit();
 		break;
 	default:
 		break;
 	}
+
+	this->PauseTillAnyInput();
 }
 
-void ToDoList::AddToDo()
+void TodoList::AddTodo()
 {
 	std::string todo;
 	std::cout << "Please enter todo : ";
 	std::getline(std::cin, todo);
 
-	todoList.push_back(todo);
+	todoVec.push_back(new Todo(todo));
 	std::cout << "Todo added" << std::endl;
-
 	//std::cin.ignore();
-	this->PauseTillAnyInput();
 }
 
-void ToDoList::DeleteToDo()
+void TodoList::DeleteTodo()
 {
-	if (todoList.empty())
-	{
-		std::cout << "Todo List is empty!" << std::endl;
-		this->PauseTillAnyInput();
-		return;
-	}
-	for (int i = 0; i < todoList.size(); i++)
-	{
-		std::cout << i + 1 << " " << todoList[i] << std::endl;
-	}
+	this->PrintTodoVec(todoVec);
 
 	int index{};
 	std::cout << "Enter delete index : ";
 	std::cin >> index;
-	std::cin.ignore();
+	index--;
 
-	if (index < todoList.size())
+	if (index < todoVec.size())
 	{
-		std::cout << todoList[index - 1] << " is deleted" << std::endl;
-		todoList.erase(todoList.begin()+ index - 1);
-		this->PauseTillAnyInput();
+		std::cout << todoVec[index]->GetTodoStr() << " is deleted" << std::endl;
+		todoVec.erase(todoVec.begin()+ index);
 		return;
 	}
 	else
 	{
 		std::cout << "Out of index" << std::endl;
-		this->PauseTillAnyInput();
 		return;
 	}
 }
 
-void ToDoList::PrintToDo() const
+void TodoList::PrintTodoVec(std::vector<Todo*> vec) const
 {
-	if (todoList.empty())
+	if (vec.empty())
 	{
-		std::cout << "Todo List is empty!" << std::endl;
-		this->PauseTillAnyInput();
+		std::cout << "vec is empty" << std::endl;
 		return;
 	}
-
-	for (int i = 0; i < todoList.size(); i++)
+	for (int i = 0; i < vec.size(); i++)
 	{
-		std::cout << i + 1 << " " << todoList[i] << std::endl;
+		std::cout << i + 1 << ". " << vec[i]->GetTodoStr() << std::endl;
 	}
-
-	this->PauseTillAnyInput();
+	return;
 }
 
-void ToDoList::PrintDone() const
+void TodoList::CheckTodo()
 {
-	if (doneList.empty())
-	{
-		std::cout << "Done List is empty!" << std::endl;
-		this->PauseTillAnyInput();
-		return;
-	}
-
-	for (int i = 0; i < doneList.size(); i++)
-	{
-		std::cout << i + 1 << " " << doneList[i] << std::endl;
-	}
-
-	this->PauseTillAnyInput();
-}
-
-void ToDoList::CheckToDo()
-{
-	if (todoList.empty())
-	{
-		std::cout << "Todo List is empty!" << std::endl;
-		this->PauseTillAnyInput();
-		return;
-	}
-
-	for (int i = 0; i < todoList.size(); i++)
-	{
-		std::cout << i + 1 << " " << todoList[i] << std::endl;
-	}
+	this->PrintTodoVec(todoVec);
 
 	int index{};
 	std::cout << "Enter check index : ";
 	std::cin >> index;
-	std::cin.ignore();
 
-	if (index < todoList.size())
+	if (index < todoVec.size())
 	{
-		std::cout << todoList[index - 1] << " is check as done" << std::endl;
-		doneList.push_back(todoList[index - 1]);
+		index--;
+		std::cout << todoVec[index]->GetTodoStr() << " is check as done" << std::endl;
+		doneVec.push_back(todoVec[index]);
 
-		todoList.erase(todoList.begin() + index - 1);
-		this->PauseTillAnyInput();
+		todoVec.erase(todoVec.begin() + index);
 		return;
 	}
 	else
 	{
 		std::cout << "Out of index" << std::endl;
 	}
-
-	PauseTillAnyInput();
+	this->PauseTillAnyInput();
 }
 
-void ToDoList::Reset()
+void TodoList::Reset()
 {
-	todoList.clear();
-	doneList.clear();
+	todoVec.clear();
+	doneVec.clear();
 }
 
-void ToDoList::Quit()
+void TodoList::Quit()
 {
 	std::cout << "Quit TO DO Lists." << std::endl;
-	std::cout << "Goodbye!." << std::endl;
+
+	// Save all to .txt
+	this->SaveTxt(todoVecTxtName);
+	this->SaveTxt(doneVecTxtName);
+
+	// Delete all in todoVec
+	this->DeleteAllTodo(todoVec);
+	this->DeleteAllTodo(doneVec);
 
 	isRun = false;
 }
 
-void ToDoList::PauseTillAnyInput() const
+void TodoList::DeleteAllTodo(std::vector<Todo*> vec)
+{
+	for (Todo* todo : vec)
+	{
+		delete todo;
+	}
+}
+
+void TodoList::PauseTillAnyInput() const
 {
 	std::cout << "Press any key to continue..." << std::endl;
 	_getch();

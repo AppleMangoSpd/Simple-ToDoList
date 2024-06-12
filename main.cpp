@@ -1,10 +1,10 @@
-#include "ToDoList.h"
+#include "TodoList.h"
 
 int main()
 {
-	ToDoList* pToDo = new ToDoList();
-	pToDo->StartUpdate();
+	TodoList* pTodo = new TodoList();
+	pTodo->StartUpdate();
 
-	delete pToDo;
+	delete pTodo;
 	return 0;
-}
+}    
